@@ -14,8 +14,10 @@ describe('pick 유틸리티 단위 테스트', () => {
     };
 
     // Act: `pick` 함수 호출
+    const result = pick(obj, 'a');
 
     // Assert: 결과가 예상한 객체와 일치하는지 확인
+    expect(result).toStrictEqual({ a: 'A' });
   });
 
   /**
@@ -31,8 +33,10 @@ describe('pick 유틸리티 단위 테스트', () => {
     };
 
     // Act: `pick` 함수 호출
+    const result = pick(obj, 'a', 'b');
 
     // Assert: 결과가 예상한 객체와 일치하는지 확인
+    expect(result).toStrictEqual({ a: 'A', b: { c: 'C' } });
   });
 
   /**
@@ -48,8 +52,10 @@ describe('pick 유틸리티 단위 테스트', () => {
     };
 
     // Act: `pick` 함수 호출 (키 미지정)
+    const result = pick(obj);
 
     // Assert: 결과가 빈 객체인지 확인
+    expect(result).toStrictEqual({});
   });
 
   /**
@@ -64,6 +70,9 @@ describe('pick 유틸리티 단위 테스트', () => {
     };
 
     // Act & Assert: `pick` 함수 호출 시 에러가 발생하는지 확인
+    expect(() => pick(obj, 'c')).toThrow(
+      'Property "c" does not exist on the object'
+    );
   });
 });
 
@@ -87,8 +96,11 @@ describe('debounce 유틸리티 단위 테스트', () => {
     const debouncedFn = debounce(spy, 300);
 
     // Act: debounce 함수 호출 및 시간 진행
+    debouncedFn();
+    vi.advanceTimersByTime(300);
 
     // Assert: 스파이 함수가 호출되었는지 확인
+    expect(spy).toHaveBeenCalled();
   });
 
   /**
@@ -109,7 +121,10 @@ describe('debounce 유틸리티 단위 테스트', () => {
 
     debouncedFn(); // 호출 4
 
+    vi.advanceTimersByTime(300);
+
     // Assert: 스파이 함수가 단 한 번만 호출되었는지 확인
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 
   /**
@@ -122,7 +137,13 @@ describe('debounce 유틸리티 단위 테스트', () => {
     const debouncedFn = debounce(spy, 300);
 
     // Act: debounce 함수 호출 및 시간 일부 진행
+    debouncedFn();
+    debouncedFn();
+    debouncedFn();
+
+    vi.advanceTimersByTime(100);
 
     // Assert: 스파이 함수가 아직 호출되지 않았는지 확인
+    expect(spy).not.toHaveBeenCalled();
   });
 });

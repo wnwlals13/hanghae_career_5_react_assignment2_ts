@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 import {
   mockUseAuthStore,
@@ -6,6 +6,7 @@ import {
 } from '@/utils/test/mockZustandStore';
 import render from '@/utils/test/render';
 import { ProductInfoTable } from '../ProductInfoTable';
+import { formatNumber } from '@/utils/formatter';
 
 beforeEach(() => {
   mockUseAuthStore({
@@ -42,10 +43,28 @@ it('장바구니에 포함된 아이템들의 이름, 수량, 합계가 제대�
   const dataRows = rows.slice(1); // 헤더 행을 제외한 데이터 행을 선택
 
   const [firstItem, secondItem] = dataRows;
+  const firstCells = within(firstItem).getAllByRole('cell');
+  const secondCells = within(secondItem).getAllByRole('cell');
 
   // Assert: 첫 번째 아이템의 이름, 수량, 합계 금액을 확인합니다.
+  expect(firstCells[1].textContent).toBe('Handmade Cotton Fish');
+  const first_count = (
+    within(firstCells[2]).getByRole('spinbutton') as HTMLInputElement
+  ).value;
+  expect(first_count).toBe('3');
+  expect(firstCells[3].textContent).toBe(
+    '₩' + String(formatNumber(Number(first_count) * 809))
+  );
 
   // Assert: 두 번째 아이템의 이름, 수량, 합계 금액을 확인합니다.
+  expect(secondCells[1].textContent).toBe('Awesome Concrete Shirt');
+  const second_count = (
+    within(secondCells[2]).getByRole('spinbutton') as HTMLInputElement
+  ).value;
+  expect(second_count).toBe('4');
+  expect(secondCells[3].textContent).toBe(
+    '₩' + String(formatNumber(Number(second_count) * 442))
+  );
 });
 
 it('특정 아이템의 수량이 변경되었을 때 값이 재계산되어 올바르게 업데이트 된다', async () => {
@@ -55,8 +74,14 @@ it('특정 아이템의 수량이 변경되었을 때 값이 재계산되어 올
   const [firstItem] = dataRows.slice(1); // 첫 번째 데이터 행 선택
 
   // Act: 첫 번째 아이템의 수량을 변경합니다.
+  const numberInput = within(firstItem).getByRole(
+    'spinbutton'
+  ) as HTMLInputElement;
+  fireEvent.change(numberInput, { target: { value: 5 } }); // 수량변경
 
   // Assert: 수량이 변경된 후 재계산된 금액이 올바르게 표시되는지 확인합니다.
+  const cells = within(firstItem).getAllByRole('cell');
+  expect(cells[3].textContent).toBe('₩' + String(formatNumber(5 * 809)));
 });
 
 // 최대 수량을 초과할 경우 경고 메시지 확인
@@ -70,8 +95,14 @@ it('특정 아이템의 수량이 1000개로 변경될 경우 "최대 999개 까
   const [firstItem] = dataRows.slice(1);
 
   // Act: 첫 번째 아이템의 수량을 1000으로 변경합니다.
+  const numberInput = within(firstItem).getByRole(
+    'spinbutton'
+  ) as HTMLInputElement;
+  fireEvent.change(numberInput, { target: { value: 1000 } }); // 수량변경
 
   // Assert: 최대 수량 초과 경고 메시지가 올바르게 표시되는지 확인합니다.
+  expect(alertSpy).toHaveBeenCalled();
+  expect(alertSpy).toHaveBeenCalledWith('최대 999개 까지 가능합니다!');
 });
 
 // 아이템 삭제 버튼 클릭 후 UI에서 해당 아이템이 사라지는지 확인
@@ -82,8 +113,12 @@ it('특정 아이템의 삭제 버튼을 클릭할 경우 해당 아이템이 �
   const [, secondItem] = dataRows.slice(1); // 두 번째 데이터 행 선택
 
   // Assert: 삭제 전 아이템이 화면에 있는지 확인합니다.
+  expect(secondItem).toBeInTheDocument();
 
   // Act: 삭제 버튼을 클릭합니다.
+  const delButton = within(secondItem).getByRole('button');
+  fireEvent.click(delButton);
 
   // Assert: 삭제 후 해당 아이템이 화면에서 사라졌는지 확인합니다.
+  expect(secondItem).not.toBeInTheDocument();
 });
